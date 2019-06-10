@@ -4,6 +4,7 @@ const promisify = require('promisify-es6')
 const map = require('async/map')
 const isIpfs = require('is-ipfs')
 const CID = require('cids')
+const base32 = require('base32.js')
 
 const ERR_BAD_PATH = 'ERR_BAD_PATH'
 exports.OFFLINE_ERROR = 'This command must be run in online mode. Try running \'ipfs daemon\' first.'
@@ -134,7 +135,22 @@ const resolvePath = promisify(function (objectAPI, ipfsPaths, callback) {
     }
   }, callback)
 })
+/**
+ * Convert a block key to cid
+ * @param {Key} key form /<base32 encoded string>
+ * @returns {CID}
+ */
+function blockKeyToCid (key) {
+  try {
+    const decoder = new base32.Decoder()
+    const buff = Buffer.from(decoder.write(key.toString().slice(1)).finalize())
+    return new CID(buff)
+  } catch (err) {
+    return { err: `Could not convert block with key '${key}' to CID: ${err.message}` }
+  }
+}
 
 exports.normalizePath = normalizePath
 exports.parseIpfsPath = parseIpfsPath
 exports.resolvePath = resolvePath
+exports.blockKeyToCid = blockKeyToCid
